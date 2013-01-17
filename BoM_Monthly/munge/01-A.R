@@ -81,18 +81,50 @@ ggplot(data=bom.climate.molten, aes(x=Month, y = Value, colour = Statistic.Eleme
 ## plotting stacked multivariate data table, dividing temp and rainfall into two facets
 
 climate.tall <- bom.climate.molten
-climate.tall$TempQ <- grepl(pattern='temperature', x=climate.tall[ ,1])
-climate.tall$Category <- grepl(pattern='temperature', x=climate.tall[ ,1])
-#climate.tall$Category <- as.factor(climate.tall$Category)
-#levels(climate.tall$Category) <- list(TRUE = "Temperature", FALSE = "Rainfall")
+climate.tall$RainfallQuery <- grepl(pattern='rainfall', x=climate.tall[ ,1])
+climate.tall$TempQuery <- grepl(pattern='temperature', x=climate.tall[ ,1])
 
 
 ggplot(data=climate.tall, aes(x=Month, y = Value, colour = Statistic.Element)) + 
   geom_line() + facet_grid(facets='TempQ~.', scales='free_y', )
 
 ## plotting stacked multivariate data table, dividing temp and rainfal with gridExtra
-# subsetting rainfall measurements
-climate.tall.rf <- subset(x=climate.tall, subset= TempQ == TRUE)
-# plotting rainfall measurements
-ggplot(data=climate.tall.rf, aes(x=as.factor(Month), y=Value, colour = Statistic.Element)) + geom_bar()
-ggplot(data=climate.tall.rf, aes(x=Month, y=Value, colour = Statistic.Element)) + geom_point() + theme_bw()
+# subsetting temperature 
+climate.tall.temp <- subset(x=climate.tall, subset = TempQuery == TRUE)
+# subsetting rainfall
+climate.tall.rf <- subset(x=climate.tall, subset = RainfallQuery == TRUE)
+# plotting temperature 
+ggplot(data=climate.tall.temp, aes(x=as.factor(Month), y=Value, colour = Statistic.Element)) + geom_bar()
+ggplot(data=climate.tall.temp, aes(x=Month, y=Value, colour = Statistic.Element)) + geom_line() + theme_bw()
+plot.df <- climate.tall.rf
+ggplot( data = plot.df, aes(x=as.factor(Month),
+                            y = Value, 
+                            fill = Statistic.Element)) + 
+  geom_bar(position='dodge') + theme_bw()
+
+subset(x=climate.tall.rf, subset= Statistic.Element=="Decile 1 monthly rainfall (mm) for years 1997 to 2012")
+
+reshape(data=climate.tall.rf, drop=c('RainfallQuery'), direction='wide', )
+
+DF <- climate.tall.rf
+DF$RainfallQuery <- NULL
+DF$TempQuery <- NULL
+DF <- reshape(DF, timevar= "Month", idvar = "Statistic.Element", direction = 'wide')
+DF <- (t(DF))
+DF <- DF[, c(2,1,3)]
+colnames(DF) <- DF[1, ]
+DF <- DF[2:nrow(DF), ]
+DF <- data.frame("Decile_5" = DF[ ,1], "Decile_1" = DF[ ,2], "Decile_9" = DF[ ,3], "Month" = 1:12)
+limits <- aes(ymax = Decile_9,
+              ymin = Decile_1)
+#limits <- aes(ymax = resp + se, ymin=resp - se)
+
+ggplot(DF, aes(y = Decile_5, x = Month)) + geom_point()
+p <- ggplot(DF, aes(y = Decile_5, x = as.factor(Month))) 
+p + geom_bar(position='dodge')
+
+# Because the bars and errorbars have different widths
+# we need to specify how wide the objects we are dodging are
+dodge <- position_dodge(width=0.9)
+
+p + geom_bar(position=dodge) + geom_errorbar(limits, position=dodge, width=0.25)
