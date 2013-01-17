@@ -114,7 +114,11 @@ DF <- (t(DF))
 DF <- DF[, c(2,1,3)]
 colnames(DF) <- DF[1, ]
 DF <- DF[2:nrow(DF), ]
-DF <- data.frame("Decile_5" = DF[ ,1], "Decile_1" = DF[ ,2], "Decile_9" = DF[ ,3], "Month" = 1:12)
+
+DF <- data.frame("Decile_5" = as.numeric(DF[ ,1]),
+                 "Decile_1" = as.numeric(DF[ ,2]),
+                 "Decile_9" = as.numeric(DF[ ,3]),
+                 "Month" = 1:12)
 limits <- aes(ymax = Decile_9,
               ymin = Decile_1)
 #limits <- aes(ymax = resp + se, ymin=resp - se)
@@ -127,4 +131,20 @@ p + geom_bar(position='dodge')
 # we need to specify how wide the objects we are dodging are
 dodge <- position_dodge(width=0.9)
 
-p + geom_bar(position=dodge) + geom_errorbar(limits, position=dodge, width=0.25)
+p + geom_bar(position=dodge) + geom_errorbar(limits, position=dodge, width=0.25) +
+  theme_bw() + 
+  scale_y_continuous('Monthly rainfall (mm)') +
+ scale_x_discrete('Month', 
+                  labels = c('1' = 'Jan',
+                             '2' = 'Feb', 
+                             '3' = 'Mar', 
+                             '4' = 'Apr',
+                             '5' = 'May',
+                             '6' = 'Jun',
+                             '7' = 'Jul',
+                             '8' = 'Aug',
+                             '9' = 'Sep',
+                             '10'= 'Oct',
+                             '11'= 'Nov',
+                             '12'= 'Dec'))
+
