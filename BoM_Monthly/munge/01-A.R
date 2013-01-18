@@ -89,6 +89,12 @@ climate.tall <- bom.climate.molten
 climate.tall$RainfallQuery <- grepl(pattern='rainfall', x=climate.tall[ ,1])
 climate.tall$TempQuery <- grepl(pattern='temperature', x=climate.tall[ ,1])
 
+## cropping out the words temperature and rainfall from the variable labels
+## we need to do this to get the legends to fit
+# cropping the variable names
+climate.tall[ ,1] <- sub(x=climate.tall[ ,1], pattern=" rainfall", replacement="")
+climate.tall[ ,1] <- sub(x=climate.tall[ ,1], pattern=" temperature", replacement="")
+
 # map facet labels from codes with a labeller function
 rt_labeller <- function(var, value){
   if (var == "TempQuery") {
@@ -116,7 +122,9 @@ climate.tall.rf <- subset(x=climate.tall, subset = RainfallQuery == TRUE)
 climate.tall.temp$Month <- as.numeric(climate.tall.temp$Month)
 ggplot(data=climate.tall.temp, aes(x=as.factor(Month), y=Value, colour = Statistic.Element)) + geom_bar()
 
-plot.o <- ggplot(data=climate.tall.temp, aes(x=Month, y=Value, lty = Statistic.Element)) + geom_line() + theme_bw()
+plot.df <- climate.tall.temp
+names(plot.df)[[1]] <- "Variable"
+plot.o <- ggplot(data=plot.df, aes(x=Month, y=Value, lty = Variable)) + geom_line()
 plot.o <- plot.o + scale_y_continuous(expression(paste("Temperature "* degree, "C")))
 plot.o <- plot.o + scale_x_discrete('Month', 
                  labels = c('1' = 'Jan',
@@ -131,7 +139,9 @@ plot.o <- plot.o + scale_x_discrete('Month',
                             '10'= 'Oct',
                             '11'= 'Nov',
                             '12'= 'Dec'))
+plot.o <- plot.o + theme_bw() + theme(legend.position = "bottom") 
 plot.o
+
 
 # plot.df <- climate.tall.temp
 # ggplot( data = plot.df, aes(x=as.factor(Month),
@@ -193,5 +203,5 @@ plot.p <- p + geom_bar(position=dodge) + geom_errorbar(limits, position=dodge, w
 plot.p
 
 require(gridExtra)
-grid.arrange(plot.o, plot.p)
+grid.arrange(plot.p, plot.o)
 # TODO change legend location in plot.o
