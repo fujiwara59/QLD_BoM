@@ -1,19 +1,28 @@
 # Example preprocessing script.
 
-require(reshape2)
-
 ## Download the bom data
 # Specify is the url of the data file
-data_url <- 'http://www.bom.gov.au/clim_data/cdio/tables/text/IDCJCM0036_040209.csv'
+data_url <- list()
+# North Stradbroke Island QLD
+data_url[[1]] <- 'http://www.bom.gov.au/clim_data/cdio/tables/text/IDCJCM0036_040209.csv'
+# East Kangaloon NSW
+data_url[[2]] <- 'http://www.bom.gov.au/clim_data/cdio/tables/text/IDCJCM0037_068239.csv'
+# Beerburrum Forest Station QLD
+data_url[[3]] <- 'http://www.bom.gov.au/clim_data/cdio/tables/text/IDCJCM0036_040284.csv'
+
 # sfuj: You can append this to an url prevent redirection -> &ndplr=1
 # Download the data and loading it into R memory
 bom.climate <- read.csv(data_url, skip = 10)
 # Take a quick look at the data
 View(bom.climate)
 
-# sfuj: my shortlist of items to grep
-mean.max.t <- "Mean maximum temperature" #(Degrees C)
+# Grab the station identification
+bom.climate.meta <- read.csv(data_url)
+station_id <- bom.climate.meta[2,1]
+rm(bom.climate.meta)
+print(station_id)
 
+# sfuj: variables to locate within the dataframe, using grep
 target.var.list <- list("Mean maximum temperature",
                         "Mean 9am temperature",
                         "Mean 3pm temperature",
@@ -125,7 +134,15 @@ ggplot(data=climate.tall.temp, aes(x=as.factor(Month), y=Value, colour = Statist
 plot.df <- climate.tall.temp
 names(plot.df)[[1]] <- "Variable"
 plot.o <- ggplot(data=plot.df, aes(x=Month, y=Value, lty = Variable)) + geom_line()
-plot.o <- plot.o + scale_y_continuous(expression(paste("Temperature "* degree, "C")))
+
+if (spec.fixed.y == TRUE) {
+  plot.o <- plot.o + scale_y_continuous(expression(paste("Temperature "* degree, "C")),
+    limits = c(-2, 35))
+} else {
+  plot.o <- plot.o + scale_y_continuous(expression(paste("Temperature "* degree, "C")))  
+}
+plot.o
+
 plot.o <- plot.o + scale_x_discrete('Month', 
                  labels = c('1' = 'Jan',
                             '2' = 'Feb', 
@@ -149,10 +166,7 @@ plot.o
 #                             fill = Statistic.Element)) + 
 #   geom_bar(position='dodge') + theme_bw()
 
-## plotting rainfall
-
-#subset(x=climate.tall.rf, subset= Statistic.Element=="Decile 1 monthly rainfall (mm) for years 1997 to 2012")
-
+## PLOTTING RAINFALL
 
 DF <- climate.tall.rf
 DF$RainfallQuery <- NULL
@@ -181,12 +195,10 @@ p + geom_bar(position='dodge')
 # we need to specify how wide the objects we are dodging are
 dodge <- position_dodge(width=0.9)
 
-
 # in the following plot
 # errors bars show decile 9 (top end) and decile 1 (low end)
 plot.p <- p + geom_bar(position=dodge) + geom_errorbar(limits, position=dodge, width=0.25) +
   theme_bw() + 
-  scale_y_continuous('Monthly rainfall (mm)') +
  scale_x_discrete('Month', 
                   labels = c('1' = 'Jan',
                              '2' = 'Feb', 
@@ -200,8 +212,41 @@ plot.p <- p + geom_bar(position=dodge) + geom_errorbar(limits, position=dodge, w
                              '10'= 'Oct',
                              '11'= 'Nov',
                              '12'= 'Dec'))
-plot.p
+if (spec.fixed.y == TRUE) {
+  plot.p <- plot.p + scale_y_continuous('Monthly rainfall (mm)', limits = c(0, 450))  
+  } else {
+    plot.p <- plot.p + scale_y_continuous('Monthly rainfall (mm)')
+  }
 
-require(gridExtra)
+  
+  
+# same plot without axis label or tick mark labels. 
+(plot.p <- p + geom_bar(position=dodge) + geom_errorbar(limits, position=dodge, width=0.25) +
+  theme_bw() + 
+  scale_y_continuous('Monthly rainfall (mm)') +
+  scale_x_discrete('', labels = NULL) )
+
+
 grid.arrange(plot.p, plot.o)
-# TODO change legend location in plot.o
+
+
+## move to source
+wd.backup <- getwd()
+setwd("./graphs/")
+
+fn <- paste(Sys.Date(), station_id, "temp and rainfall plot w gridextra")
+spec.res <- 90
+
+pdf(file = paste(fn, "defaults", ".pdf"))
+grid.arrange(plot.p, plot.o)
+dev.off()
+
+png(filename = paste(fn, "defaults", ".png"))
+grid.arrange(plot.p, plot.o)
+dev.off()
+
+png(filename = paste(fn, spec.res, ".png"), res= spec.res)
+grid.arrange(plot.p, plot.o)
+dev.off()
+
+# TODO change legend location in plot.o DONE
