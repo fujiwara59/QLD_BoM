@@ -61,6 +61,9 @@ dim(bom.climate.subset)
 target.rows <- as.numeric(target.var.rownums)
 bom.climate.subset.2 <-bom.climate.subset[target.rows, ] 
 
+# cropping the variable names
+bom.climate.subset.2[ ,1] <- sub(x=bom.climate.subset.2[ ,1], pattern=" [[:punct:]][[:print:]]{2,9}[[:punct:]] for years [[:digit:]]* to [[:digit:]]* ", replacement="")
+
 # stacking the data
 # bom.climate.molten <- melt(bom.climate.subset, id = 'Statistic.Element')
 bom.climate.molten <- melt(bom.climate.subset.2, id = 'Statistic.Element')
@@ -96,23 +99,49 @@ rt_labeller <- function(var, value){
 }
 
 ggplot(data=climate.tall, aes(x=Month, y = Value, colour = Statistic.Element)) + 
-   geom_line() + facet_grid(facets='TempQuery~.', scales='free_y', labeller=rt_labeller)
+   geom_line() + 
+  facet_grid(facets='TempQuery~.', scales='free_y', labeller=rt_labeller) +
+  theme_bw()
 
-## plotting stacked multivariate data table, dividing temp and rainfal with gridExtra
+### plotting stacked multivariate data table, dividing temp and rainfal with gridExtra
+
+## subsetting
 # subsetting temperature 
 climate.tall.temp <- subset(x=climate.tall, subset = TempQuery == TRUE)
 # subsetting rainfall
 climate.tall.rf <- subset(x=climate.tall, subset = RainfallQuery == TRUE)
-# plotting temperature 
-ggplot(data=climate.tall.temp, aes(x=as.factor(Month), y=Value, colour = Statistic.Element)) + geom_bar()
-ggplot(data=climate.tall.temp, aes(x=Month, y=Value, colour = Statistic.Element)) + geom_line() + theme_bw()
-plot.df <- climate.tall.rf
-ggplot( data = plot.df, aes(x=as.factor(Month),
-                            y = Value, 
-                            fill = Statistic.Element)) + 
-  geom_bar(position='dodge') + theme_bw()
 
-subset(x=climate.tall.rf, subset= Statistic.Element=="Decile 1 monthly rainfall (mm) for years 1997 to 2012")
+## plotting temperature 
+
+climate.tall.temp$Month <- as.numeric(climate.tall.temp$Month)
+ggplot(data=climate.tall.temp, aes(x=as.factor(Month), y=Value, colour = Statistic.Element)) + geom_bar()
+
+plot.o <- ggplot(data=climate.tall.temp, aes(x=Month, y=Value, lty = Statistic.Element)) + geom_line() + theme_bw()
+plot.o <- plot.o + scale_y_continuous(expression(paste("Temperature "* degree, "C")))
+plot.o <- plot.o + scale_x_discrete('Month', 
+                 labels = c('1' = 'Jan',
+                            '2' = 'Feb', 
+                            '3' = 'Mar', 
+                            '4' = 'Apr',
+                            '5' = 'May',
+                            '6' = 'Jun',
+                            '7' = 'Jul',
+                            '8' = 'Aug',
+                            '9' = 'Sep',
+                            '10'= 'Oct',
+                            '11'= 'Nov',
+                            '12'= 'Dec'))
+plot.o
+
+# plot.df <- climate.tall.temp
+# ggplot( data = plot.df, aes(x=as.factor(Month),
+#                             y = Value, 
+#                             fill = Statistic.Element)) + 
+#   geom_bar(position='dodge') + theme_bw()
+
+## plotting rainfall
+
+#subset(x=climate.tall.rf, subset= Statistic.Element=="Decile 1 monthly rainfall (mm) for years 1997 to 2012")
 
 
 DF <- climate.tall.rf
@@ -121,6 +150,7 @@ DF$TempQuery <- NULL
 
 DF <- reshape(DF, timevar= "Month", idvar = "Statistic.Element", direction = 'wide')
 DF <- (t(DF))
+
 DF <- DF[, c(2,1,3)]
 colnames(DF) <- DF[1, ]
 DF <- DF[2:nrow(DF), ]
@@ -141,7 +171,10 @@ p + geom_bar(position='dodge')
 # we need to specify how wide the objects we are dodging are
 dodge <- position_dodge(width=0.9)
 
-p + geom_bar(position=dodge) + geom_errorbar(limits, position=dodge, width=0.25) +
+
+# in the following plot
+# errors bars show decile 9 (top end) and decile 1 (low end)
+plot.p <- p + geom_bar(position=dodge) + geom_errorbar(limits, position=dodge, width=0.25) +
   theme_bw() + 
   scale_y_continuous('Monthly rainfall (mm)') +
  scale_x_discrete('Month', 
@@ -157,4 +190,8 @@ p + geom_bar(position=dodge) + geom_errorbar(limits, position=dodge, width=0.25)
                              '10'= 'Oct',
                              '11'= 'Nov',
                              '12'= 'Dec'))
+plot.p
 
+require(gridExtra)
+grid.arrange(plot.o, plot.p)
+# TODO change legend location in plot.o
