@@ -1,5 +1,7 @@
 # Example preprocessing script.
 
+require(reshape2)
+
 ## Download the bom data
 # Specify is the url of the data file
 data_url <- 'http://www.bom.gov.au/clim_data/cdio/tables/text/IDCJCM0036_040209.csv'
@@ -22,10 +24,10 @@ target.var.list <- list("Mean maximum temperature",
 
 
 ## locating a given variable in the data table
-# locating the row number of one variable
-target.row <- grep(pattern = mean.max,
-                   x = bom.climate[ , 1]
-                   )
+# # locating the row number of one variable
+# target.row <- grep(pattern = mean.max,
+#                    x = bom.climate[ , 1]
+#                    )
 # locating the row number of multiple variables. 
 target.var.rownums<-list()
 for (target.var in target.var.list){
@@ -39,21 +41,21 @@ bom.climate.subset <- bom.climate[ , 1:13]
 head(bom.climate.subset)
 dim(bom.climate.subset)
 
-# subsetting one target variable
-single.var <- bom.climate.subset[target.row, ]
-target.var.name <- single.var[1]
-single.var <- single.var[2:13]
-single.var.t <- t(single.var)
-single.var.t <-data.frame("Month_alpha" = row.names(single.var.t), "Value" = as.numeric(single.var.t))
-single.var.t$Variable <- unlist(target.var.name)
-
-
-#plotting a single variable
-single.var.t$Month <- 1:12
-ggplot(data=single.var.t, aes(x=Month, y = Value)) + 
-  geom_path() + geom_point() +
-  scale_x_discrete('Month') +
-  scale_y_continuous(unlist(target.var.name))
+# # subsetting one target variable
+# single.var <- bom.climate.subset[target.row, ]
+# target.var.name <- single.var[1]
+# single.var <- single.var[2:13]
+# single.var.t <- t(single.var)
+# single.var.t <-data.frame("Month_alpha" = row.names(single.var.t), "Value" = as.numeric(single.var.t))
+# single.var.t$Variable <- unlist(target.var.name)
+# 
+# 
+# #plotting a single variable
+# single.var.t$Month <- 1:12
+# ggplot(data=single.var.t, aes(x=Month, y = Value)) + 
+#   geom_path() + geom_point() +
+#   scale_x_discrete('Month') +
+#   scale_y_continuous(unlist(target.var.name))
 
 # subsetting multiple target variables
 target.rows <- as.numeric(target.var.rownums)
@@ -84,9 +86,17 @@ climate.tall <- bom.climate.molten
 climate.tall$RainfallQuery <- grepl(pattern='rainfall', x=climate.tall[ ,1])
 climate.tall$TempQuery <- grepl(pattern='temperature', x=climate.tall[ ,1])
 
+# map facet labels from codes with a labeller function
+rt_labeller <- function(var, value){
+  if (var == "TempQuery") {
+    value[value == "TRUE"] <- "Temperature"
+    value[value == "FALSE"] <- "Rainfall"
+  }
+  return(value)
+}
 
 ggplot(data=climate.tall, aes(x=Month, y = Value, colour = Statistic.Element)) + 
-  geom_line() + facet_grid(facets='TempQ~.', scales='free_y', )
+   geom_line() + facet_grid(facets='TempQuery~.', scales='free_y', labeller=rt_labeller)
 
 ## plotting stacked multivariate data table, dividing temp and rainfal with gridExtra
 # subsetting temperature 
@@ -104,11 +114,11 @@ ggplot( data = plot.df, aes(x=as.factor(Month),
 
 subset(x=climate.tall.rf, subset= Statistic.Element=="Decile 1 monthly rainfall (mm) for years 1997 to 2012")
 
-reshape(data=climate.tall.rf, drop=c('RainfallQuery'), direction='wide', )
 
 DF <- climate.tall.rf
 DF$RainfallQuery <- NULL
 DF$TempQuery <- NULL
+
 DF <- reshape(DF, timevar= "Month", idvar = "Statistic.Element", direction = 'wide')
 DF <- (t(DF))
 DF <- DF[, c(2,1,3)]
