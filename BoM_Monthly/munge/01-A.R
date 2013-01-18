@@ -1,5 +1,8 @@
 # Example preprocessing script.
 
+# user specification block
+spec.fixed.y <- FALSE
+
 ## Download the bom data
 # Specify is the url of the data file
 data_url <- list()
