@@ -1,4 +1,9 @@
-# Example preprocessing script.
+
+# Changelog
+# 2013-01-24
+#  Added EPS output
+#  Removed lower margin from top plot, and upper margin from bottom plot.
+#  Added brackets around (mm) and (deg C) in axis labels
 
 # user specification block
 spec.fixed.y <- FALSE
@@ -15,14 +20,14 @@ data_url[[3]] <- 'http://www.bom.gov.au/clim_data/cdio/tables/text/IDCJCM0036_04
 
 # sfuj: You can append this to an url prevent redirection -> &ndplr=1
 # Download the data and loading it into R memory
-bom.climate <- read.csv(data_url, skip = 10)
+bom.climate <- read.csv(data_url[[2]], skip = 10)
 # Take a quick look at the data
 View(bom.climate)
 
 # Grab the station identification
-bom.climate.meta <- read.csv(data_url)
+bom.climate.meta <- read.csv(data_url[[2]])
 station_id <- bom.climate.meta[2,1]
-rm(bom.climate.meta)
+
 print(station_id)
 
 # sfuj: variables to locate within the dataframe, using grep
@@ -139,10 +144,10 @@ names(plot.df)[[1]] <- "Variable"
 plot.o <- ggplot(data=plot.df, aes(x=Month, y=Value, lty = Variable)) + geom_line()
 
 if (spec.fixed.y == TRUE) {
-  plot.o <- plot.o + scale_y_continuous(expression(paste("Temperature "* degree, "C")),
+  plot.o <- plot.o + scale_y_continuous(expression(paste("Temperature ("* degree, "C)")),
     limits = c(-2, 35))
 } else {
-  plot.o <- plot.o + scale_y_continuous(expression(paste("Temperature "* degree, "C")))  
+  plot.o <- plot.o + scale_y_continuous(expression(paste("Temperature ("* degree, "C)")))  
 }
 plot.o
 
@@ -159,7 +164,8 @@ plot.o <- plot.o + scale_x_discrete('Month',
                             '10'= 'Oct',
                             '11'= 'Nov',
                             '12'= 'Dec'))
-plot.o <- plot.o + theme_bw() + theme(legend.position = "bottom") 
+plot.o <- plot.o + theme_bw() + theme(legend.position = "bottom") +
+  theme(plot.margin = unit(c(0,1,1,1), "mm")) #top, right, bottom, and left
 plot.o
 
 
@@ -216,9 +222,9 @@ plot.p <- p + geom_bar(position=dodge) + geom_errorbar(limits, position=dodge, w
                              '11'= 'Nov',
                              '12'= 'Dec'))
 if (spec.fixed.y == TRUE) {
-  plot.p <- plot.p + scale_y_continuous('Monthly rainfall (mm)', limits = c(0, 450))  
+  plot.p <- plot.p + scale_y_continuous('Rainfall (mm)', limits = c(0, 450))  
   } else {
-    plot.p <- plot.p + scale_y_continuous('Monthly rainfall (mm)')
+    plot.p <- plot.p + scale_y_continuous('Rainfall (mm)')
   }
 
   
@@ -226,29 +232,46 @@ if (spec.fixed.y == TRUE) {
 # same plot without axis label or tick mark labels. 
 (plot.p <- p + geom_bar(position=dodge) + geom_errorbar(limits, position=dodge, width=0.25) +
   theme_bw() + 
-  scale_y_continuous('Monthly rainfall (mm)') +
-  scale_x_discrete('', labels = NULL) )
+  scale_y_continuous('Rainfall (mm)') +
+  scale_x_discrete('', labels = NULL) +
+   theme(plot.margin = unit(c(1,1,0,1), "mm"))) #top, right, bottom, and left)
 
 
 grid.arrange(plot.p, plot.o)
 
 
 ## move to source
+
 wd.backup <- getwd()
+setwd("./BoM_Monthly/")
 setwd("./graphs/")
 
 fn <- paste(Sys.Date(), station_id, "temp and rainfall plot w gridextra")
 spec.res <- 90
+spec.res <- 90
+
+W = 1680
+H = 1050
 
 pdf(file = paste(fn, "defaults", ".pdf"))
-grid.arrange(plot.p, plot.o)
+ grid.arrange(plot.p, plot.o)
 dev.off()
+
 
 png(filename = paste(fn, "defaults", ".png"))
 grid.arrange(plot.p, plot.o)
 dev.off()
 
 png(filename = paste(fn, spec.res, ".png"), res= spec.res)
+grid.arrange(plot.p, plot.o)
+dev.off()
+
+source("http://gridextra.googlecode.com/svn/trunk/R/arrange.r")
+g1 = arrangeGrob(plot.p, plot.o)
+
+
+setEPS()
+postscript(file = paste(fn, ".nogaps.eps", sep = ""))
 grid.arrange(plot.p, plot.o)
 dev.off()
 
