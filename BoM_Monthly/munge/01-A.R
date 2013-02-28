@@ -17,10 +17,12 @@ data_url[[1]] <- 'http://www.bom.gov.au/clim_data/cdio/tables/text/IDCJCM0036_04
 data_url[[2]] <- 'http://www.bom.gov.au/clim_data/cdio/tables/text/IDCJCM0037_068239.csv'
 # Beerburrum Forest Station QLD
 data_url[[3]] <- 'http://www.bom.gov.au/clim_data/cdio/tables/text/IDCJCM0036_040284.csv'
-
+# Williamtown Raaf (Tomago) NSW
+data_url[[4]] <- 'http://www.bom.gov.au/clim_data/cdio/tables/text/IDCJCM0037_061078.csv'
 # sfuj: You can append this to an url prevent redirection -> &ndplr=1
+
 # Download the data and loading it into R memory
-bom.climate <- read.csv(data_url[[2]], skip = 10)
+bom.climate <- read.csv(data_url[[4]], skip = 10)
 # Take a quick look at the data
 View(bom.climate)
 
