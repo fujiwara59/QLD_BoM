@@ -1,4 +1,6 @@
 library('ProjectTemplate')
+setwd('BoM_Monthly/')
+
 load.project()
 
 for (dataset in project.info$data)
