@@ -11,23 +11,27 @@ spec.fixed.y <- FALSE
 ## Download the bom data
 # Specify is the url of the data file
 data_url <- list()
-# North Stradbroke Island QLD
+print('North Stradbroke Island QLD is station 1')
 data_url[[1]] <- 'http://www.bom.gov.au/clim_data/cdio/tables/text/IDCJCM0036_040209.csv'
-# East Kangaloon NSW
+print('East Kangaloon NSW is station 2')
 data_url[[2]] <- 'http://www.bom.gov.au/clim_data/cdio/tables/text/IDCJCM0037_068239.csv'
-# Beerburrum Forest Station QLD
+print('Beerburrum Forest Station QLD is station 3')
 data_url[[3]] <- 'http://www.bom.gov.au/clim_data/cdio/tables/text/IDCJCM0036_040284.csv'
-# Williamtown Raaf (Tomago) NSW
+print('Williamtown Raaf (Tomago) NSW is station 4')
 data_url[[4]] <- 'http://www.bom.gov.au/clim_data/cdio/tables/text/IDCJCM0037_061078.csv'
+
+target.station <- readline(prompt = "Please enter a station number from those above")
+target.station <- as.numeric(target.station)
 # sfuj: You can append this to an url prevent redirection -> &ndplr=1
 
+
 # Download the data and loading it into R memory
-bom.climate <- read.csv(data_url[[4]], skip = 10)
+bom.climate <- read.csv(data_url[[target.station]], skip = 10)
 # Take a quick look at the data
 View(bom.climate)
 
 # Grab the station identification
-bom.climate.meta <- read.csv(data_url[[2]])
+bom.climate.meta <- read.csv(data_url[[target.station]])
 station_id <- bom.climate.meta[2,1]
 
 print(station_id)
@@ -249,7 +253,7 @@ setwd("./BoM_Monthly/")
 setwd("./graphs/")
 
 fn <- paste(Sys.Date(), station_id, "temp and rainfall plot w gridextra")
-spec.res <- 90
+spec.res <- 300
 spec.res <- 90
 
 W = 1680
@@ -264,7 +268,7 @@ png(filename = paste(fn, "defaults", ".png"))
 grid.arrange(plot.p, plot.o)
 dev.off()
 
-png(filename = paste(fn, spec.res, ".png"), res= spec.res)
+png(filename = paste(fn, spec.res, ".png"), res= spec.res, width=14, height = 10, units = 'cm')
 grid.arrange(plot.p, plot.o)
 dev.off()
 
