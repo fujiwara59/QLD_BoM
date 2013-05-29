@@ -13,11 +13,17 @@ tomago[,'Date'] <- as.Date(as.character(tomago[,1]), format = "%Y%m%d")
 # drop non-numeric columns
 factor.cols <- grep('factor', sapply(tomago,class))
 tomago.xts <- tomago[,-c(factor.cols)]
+
+# force integers to numeric
 tomago.xts <- sapply(tomago.xts, as.numeric)
 
-# 
+# create xts object
 tomago.xts <- xts(tomago.xts, order.by= tomago[,'Date'])
 summary(tomago.xts)
+
+cache('tomago')
+cache('tomago.xts')
+
 
 # timeseries plot
 ggplot(tomago.xts, aes(index(tomago.xts), VPD )) + geom_line()
